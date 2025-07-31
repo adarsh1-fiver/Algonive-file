@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Task Manager</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f4f4f4;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 20px;
+    }
+
+    input, textarea, button, select {
+      margin: 6px 0;
+      padding: 10px;
+      font-size: 1em;
+    }
+
+    button {
+      background: #28a745;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+
+    button:hover {
+      background: #218838;
+    }
+
+    .task {
+      padding: 10px;
+      margin: 10px 0;
+      background: #f9f9f9;
+      border-left: 5px solid #007bff;
+      border-radius: 4px;
+    }
+
+    .completed {
+      text-decoration: line-through;
+      color: gray;
+      border-left-color: green;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 5px;
+    }
+
+    .filter {
+      margin-bottom: 10px;
+    }
+
+    .delete-btn {
+      background-color: #dc3545;
+    }
+
+    .delete-btn:hover {
+      background-color: #c82333;
+    }
+
+    .edit-btn {
+      background-color: #ffc107;
+      color: black;
+    }
+
+    .edit-btn:hover {
+      background-color: #e0a800;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Task Manager</h1>
+    <form id="taskForm">
+      <input type="text" id="title" placeholder="Task Title" required />
+      <textarea id="description" placeholder="Task Description" required></textarea>
+      <input type="date" id="dueDate" required />
+      <button type="submit">Add Task</button>
+    </form>
+
+    <div class="filter">
+      <label for="filter">Filter:</label>
+      <select id="filter">
+        <option value="all">All</option>
+        <option value="complete">Completed</option>
+        <option value="incomplete">Incomplete</option>
+      </select>
+    </div>
+
+    <div id="taskList"></div>
+  </div>
+
+  <script>
+    let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+
+    const taskForm = document.getElementById("taskForm");
+    const taskList = document.getElementById("taskList");
+    const filterSelect = document.getElementById("filter");
+
+    function saveTasks() {
+      localStorage.setItem("tasks", JSON.stringify(tasks));
+    }
+
+    function renderTasks() {
+      taskList.innerHTML = "";
+      const filter = filterSelect.value;
+
+      tasks.forEach((task, index) => {
+        if (
+          (filter === "complete" && !task.completed) ||
+          (filter === "incomplete" && task.completed)
+        ) return;
+
+        const taskDiv = document.createElement("div");
+        taskDiv.className = "task" + (task.completed ? " completed" : "");
+
+        taskDiv.innerHTML = `
+          <h3>${task.title}</h3>
+          <p>${task.description}</p>
+          <small>Due: ${task.dueDate}</small>
+          <div class="actions">
+            <button onclick="toggleComplete(${index})">${task.completed ? "Mark Incomplete" : "Mark Complete"}</button>
+            <button class="edit-btn" onclick="editTask(${index})">Edit</button>
+            <button class="delete-btn" onclick="deleteTask(${index})">Delete</button>
+          </div>
+        `;
+
+        taskList.appendChild(taskDiv);
+      });
+    }
+
+    taskForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const title = document.getElementById("title").value.trim();
+      const description = document.getElementById("description").value.trim();
+      const dueDate = document.getElementById("dueDate").value;
+
+      tasks.push({ title, description, dueDate, completed: false });
+      saveTasks();
+      renderTasks();
+
+      taskForm.reset();
+    });
+
+    function toggleComplete(index) {
+      tasks[index].completed = !tasks[index].completed;
+      saveTasks();
+      renderTasks();
+    }
+
+    function deleteTask(index) {
+      if (confirm("Are you sure you want to delete this task?")) {
+        tasks.splice(index, 1);
+        saveTasks();
+        renderTasks();
+      }
+    }
+
+    function editTask(index) {
+      const task = tasks[index];
+      document.getElementById("title").value = task.title;
+      document.getElementById("description").value = task.description;
+      document.getElementById("dueDate").value = task.dueDate;
+
+      deleteTask(index); // Remove the task and re-add after editing
+    }
+
+    filterSelect.addEventListener("change", renderTasks);
+
+    renderTasks();
+  </script>
+</body>
+</html>
+
